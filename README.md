@@ -1,6 +1,6 @@
 # Black Hole — A Spacetime Portrait
 
-A real-time raymarched Schwarzschild black hole, rendered photon by photon in a single GLSL fragment shader. Light bends around the event horizon under gravitational lensing, an accretion disk glows orange on its approaching side and dims to blue-white on the receding one through relativistic Doppler beaming, and a scroll-driven camera flight carries you from a wide establishing shot down toward the photon sphere — all wrapped in an editorial narrative about what you are seeing.
+A real-time raymarched Schwarzschild black hole, rendered photon by photon in a single GLSL fragment shader. Light bends around the event horizon under gravitational lensing, an accretion disk burns blue-white on its approaching side and dims to ember-orange on the receding one through relativistic Doppler beaming, and a scroll-driven camera flight carries you from a wide establishing shot down toward the photon sphere — all wrapped in an editorial narrative about what you are seeing.
 
 ## Physics
 
