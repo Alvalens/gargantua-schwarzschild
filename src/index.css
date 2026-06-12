@@ -1,4 +1,26 @@
 @import "tailwindcss";
 
-html, body, #root { height: 100%; margin: 0; background: #000; color: #fff; }
+:root {
+  --void: #000;
+  --paper: #f2efe9;
+  --ember: #ff7a2e;
+  --cherenkov: #7db8ff;
+  --dim: rgba(242, 239, 233, 0.55);
+}
+
+html, body, #root { height: 100%; margin: 0; background: var(--void); color: var(--paper); }
 body { font-family: ui-sans-serif, system-ui, sans-serif; overflow-x: hidden; }
+
+.font-display { font-family: 'Fraunces', serif; }
+.font-data { font-family: 'IBM Plex Mono', monospace; }
+
+/* Giant ghost section numerals — hollow stroke, barely there */
+.ghost-numeral {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: 22vw;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(242, 239, 233, 0.22);
+  user-select: none;
+}
