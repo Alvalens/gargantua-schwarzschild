@@ -101,7 +101,7 @@ vec3 sampleDisk(vec3 p, vec3 dir) {
   // slower large-scale brightness patch layer. The coarse layer also warps the
   // fine layer's radius so strands wobble instead of tracing perfect circles.
   float coarse = vnoise(vec3(cos(theta) * 0.9, sin(theta) * 0.9,
-                             r * 1.3 - 0.12 * uTime) + 31.0);
+                             r * 1.3 - 0.12 * mod(uTime, 83.333)) + 31.0); // mod keeps float32 precision over long sessions
   float fine = flowNoise(r + (coarse - 0.5) * 0.55, theta, 0.0);
   float filaments = mix(0.32, 1.7, pow(fine, 1.75));
   filaments *= mix(0.75, 1.3, coarse);
@@ -188,10 +188,10 @@ void main() {
         // Cheap Doppler brightness/tint for the haze (no pow, reuse beta).
         float betaA = 0.7 * inversesqrt(ra) *
                       dot(vec3(-newPos.z, 0.0, newPos.x) / ra, -newDir) * uDopplerStrength;
-        gcol *= 1.0 + 1.6 * betaA;
+        gcol *= max(1.0 + 1.6 * betaA, 0.0);         // guard: non-negative under extreme tuning
         gcol.b *= 1.0 + 0.5 * betaA;                 // approaching side runs bluer
         float band = smoothstep(uDiskInner - 0.3, uDiskInner + 0.2, ra) *
-                     smoothstep(uDiskOuter, uDiskOuter - 1.5, ra);
+                     (1.0 - smoothstep(uDiskOuter - 1.5, uDiskOuter, ra)); // spec-safe arg order
         float hot = 1.0 + 1.8 * exp(-(ra - uDiskInner) * 1.4);
         color += gcol * g * band * hot * 0.034 * uStepSize * uDiskBrightness;
       }
