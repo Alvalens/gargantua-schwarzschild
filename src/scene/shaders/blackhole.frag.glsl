@@ -41,14 +41,74 @@ vec3 starField(vec3 dir) {
   return vec3(star * tw) * vec3(0.9, 0.95, 1.0);
 }
 
+// --- Turbulent gas noise -----------------------------------------------------
+// 3D value noise built on the same cheap hash as the starfield.
+float vnoise(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float n000 = hash(i);
+  float n100 = hash(i + vec3(1.0, 0.0, 0.0));
+  float n010 = hash(i + vec3(0.0, 1.0, 0.0));
+  float n110 = hash(i + vec3(1.0, 1.0, 0.0));
+  float n001 = hash(i + vec3(0.0, 0.0, 1.0));
+  float n101 = hash(i + vec3(1.0, 0.0, 1.0));
+  float n011 = hash(i + vec3(0.0, 1.0, 1.0));
+  float n111 = hash(i + vec3(1.0, 1.0, 1.0));
+  return mix(mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+             mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y), f.z);
+}
+
+// 3-octave fbm, normalized to ~[0,1]. Only evaluated at disk hits, never per step.
+float fbm(vec3 p) {
+  float v = 0.5000 * vnoise(p);
+  p = p * 2.17 + vec3(11.3);
+  v += 0.2500 * vnoise(p);
+  p = p * 2.17 + vec3(5.7);
+  v += 0.1250 * vnoise(p);
+  return v * (1.0 / 0.875);
+}
+
+// Seamless flow-aligned disk turbulence in polar coords. The azimuthal angle is
+// embedded on a circle (cos/sin) so noise wraps with no seam at theta = +/-pi.
+// Radial frequency >> azimuthal frequency => streaks elongated along the orbit.
+float diskNoise(float r, float theta, float dt, float seed) {
+  float a = theta - 0.7 * pow(r, -1.5) * dt; // differential Keplerian rotation
+  vec3 p = vec3(cos(a) * 2.2, sin(a) * 2.2, r * 5.5) + seed;
+  return fbm(p);
+}
+
+// Differential rotation winds the pattern into ever-tighter spirals; crossfade
+// two half-period-offset samples so shear stays bounded (no aliasing over time).
+float flowNoise(float r, float theta, float seed) {
+  const float T = 36.0; // rewind period (seconds)
+  float t1 = mod(uTime, T);
+  float t2 = mod(uTime + 0.5 * T, T);
+  float w = abs(t1 / T * 2.0 - 1.0); // 1 when t1 wraps, 0 mid-life
+  float n1 = diskNoise(r, theta, t1, seed);
+  float n2 = diskNoise(r, theta, t2, seed + 47.0);
+  return mix(n1, n2, w);
+}
+
 // Emission color + Doppler/redshift for a disk hit at world position p, with the
 // ray travelling in direction dir. Disk orbits prograde in the y=0 plane.
 vec3 sampleDisk(vec3 p, vec3 dir) {
   float r = length(p.xz);
   float t = clamp((r - uDiskInner) / (uDiskOuter - uDiskInner), 0.0, 1.0);
+  float theta = atan(p.z, p.x);
+
+  // Turbulent filaments: fine streaks sheared by differential rotation, plus a
+  // slower large-scale brightness patch layer. pow() sharpens bright strands.
+  float fine = flowNoise(r, theta, 0.0);
+  float coarse = vnoise(vec3(cos(theta) * 0.9, sin(theta) * 0.9,
+                             r * 1.3 - 0.12 * uTime) + 31.0);
+  float filaments = mix(0.4, 1.55, pow(fine, 1.6));
+  filaments *= mix(0.8, 1.25, coarse);
 
   // Temperature ramp: hot/blue inside -> cool/orange outside.
   vec3 base = mix(uColorInner, uColorOuter, t);
+  // Inner-edge heat: pull toward white-hot before the Doppler tint at small t.
+  base = mix(vec3(1.0, 0.97, 0.92), base, smoothstep(0.0, 0.32, t));
 
   // Keplerian orbital velocity direction (tangent), magnitude ~ 1/sqrt(r).
   vec3 radial = normalize(vec3(p.x, 0.0, p.z));
@@ -62,8 +122,10 @@ vec3 sampleDisk(vec3 p, vec3 dir) {
   float doppler = dopp * dopp * dopp;                   // beaming ~ D^3 brightness boost
   vec3 shift = vec3(1.0 - 0.7 * beta, 1.0, 1.0 + 0.7 * beta); // blueshift when approaching
 
-  // Radial falloff so the inner edge glows hottest.
-  float intensity = uDiskBrightness * doppler * (1.2 - 0.6 * t);
+  // Radial falloff so the inner edge glows hottest, plus a searing photon-ring
+  // intensity bump hugging the inner radius.
+  float heat = 1.0 + 2.2 * exp(-(r - uDiskInner) * 2.8);
+  float intensity = uDiskBrightness * doppler * (1.2 - 0.6 * t) * heat * filaments;
   // Soft edges.
   float edge = smoothstep(0.0, 0.08, t) * smoothstep(1.0, 0.92, t);
 
@@ -109,6 +171,28 @@ void main() {
       float rr = length(hit.xz);
       if (rr >= uDiskInner && rr <= uDiskOuter) {
         color += sampleDisk(hit, newDir);            // additive, glowing
+      }
+    }
+
+    // Disk atmosphere: faint hot-gas haze above/below the plane. One exp per
+    // step inside the radial band only; gives the disk vertical thickness and
+    // an edge-on glow without turning the scene foggy.
+    if (abs(newPos.y) < 1.2) {
+      float ra = length(newPos.xz);
+      if (ra > uDiskInner - 0.3 && ra < uDiskOuter) {
+        float hy = newPos.y * 3.1;                   // h ~ 0.32
+        float g = exp(-hy * hy);
+        float ta = clamp((ra - uDiskInner) / (uDiskOuter - uDiskInner), 0.0, 1.0);
+        vec3 gcol = mix(uColorInner, uColorOuter, ta);
+        // Cheap Doppler brightness/tint for the haze (no pow, reuse beta).
+        float betaA = 0.7 * inversesqrt(ra) *
+                      dot(vec3(-newPos.z, 0.0, newPos.x) / ra, -newDir) * uDopplerStrength;
+        gcol *= 1.0 + 1.6 * betaA;
+        gcol.b *= 1.0 + 0.5 * betaA;                 // approaching side runs bluer
+        float band = smoothstep(uDiskInner - 0.3, uDiskInner + 0.2, ra) *
+                     smoothstep(uDiskOuter, uDiskOuter - 1.5, ra);
+        float hot = 1.0 + 1.8 * exp(-(ra - uDiskInner) * 1.4);
+        color += gcol * g * band * hot * 0.045 * uStepSize * uDiskBrightness;
       }
     }
 
