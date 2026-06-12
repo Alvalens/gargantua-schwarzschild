@@ -58,7 +58,7 @@ vec3 sampleDisk(vec3 p, vec3 dir) {
 
   // Doppler factor: approaching (vel·-dir > 0) brightens + blueshifts.
   float beta = dot(vel, -normalize(dir));
-  float dopp = 1.0 + uDopplerStrength * beta;
+  float dopp = max(1.0 + uDopplerStrength * beta, 0.0); // guard: non-negative under extreme tuning
   float doppler = dopp * dopp * dopp;                   // beaming ~ D^3 brightness boost
   vec3 shift = vec3(1.0 - 0.7 * beta, 1.0, 1.0 + 0.7 * beta); // blueshift when approaching
 
