@@ -10,4 +10,14 @@ export default defineConfig({
     tailwindcss(),
     glsl(),
   ],
+  build: {
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/node_modules[\\/](three|@react-three)[\\/]/.test(id)) return 'three'
+        },
+      },
+    },
+  },
 })
