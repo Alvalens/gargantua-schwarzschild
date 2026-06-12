@@ -4,7 +4,7 @@ export const PHYSICS = {
   diskInner: 2.2,            // inner edge of accretion disk
   diskOuter: 7.0,            // outer edge
   escapeRadius: 40.0,        // beyond this a ray is treated as reaching the sky
-  marchSteps: 240,           // integration steps (desktop)
+  marchSteps: 240,           // initial uniform seed; per-frame value comes from QUALITY tier
   stepSize: 0.18,            // base integration step length
 } as const
 

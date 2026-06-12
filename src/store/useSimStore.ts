@@ -1,5 +1,8 @@
 import { create } from 'zustand'
 import type { QualityTier } from '../lib/presets'
+import { detectQuality } from '../lib/detectQuality'
+
+const initialQuality = typeof window !== 'undefined' ? detectQuality() : 'high'
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
 
@@ -16,9 +19,9 @@ interface SimState {
 export const useSimStore = create<SimState>((set) => ({
   scrollProgress: 0,
   activeSection: 0,
-  quality: 'high',
+  quality: initialQuality,
   setScrollProgress: (n) => set({ scrollProgress: clamp01(n) }),
   setActiveSection: (i) => set({ activeSection: i }),
   setQuality: (q) => set({ quality: q }),
-  reset: () => set({ scrollProgress: 0, activeSection: 0, quality: 'high' }),
+  reset: () => set({ scrollProgress: 0, activeSection: 0, quality: initialQuality }),
 }))

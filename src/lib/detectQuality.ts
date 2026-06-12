@@ -13,7 +13,7 @@ export function pickQuality(s: DeviceSignals): QualityTier {
 export function detectQuality(): QualityTier {
   const coarsePointer =
     typeof window !== 'undefined' &&
-    window.matchMedia?.('(pointer: coarse)').matches === true
+    window.matchMedia?.('(pointer: coarse)')?.matches === true
   const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4
   return pickQuality({ coarsePointer, cores })
 }

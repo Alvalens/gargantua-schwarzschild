@@ -9,7 +9,7 @@ import { QUALITY } from '../lib/presets'
 export function BlackHoleCanvas() {
   const quality = useSimStore((s) => s.quality)
   const setQuality = useSimStore((s) => s.setQuality)
-  const [active, setActive] = useState(true)
+  const [active, setActive] = useState(() => (typeof document !== 'undefined' ? !document.hidden : true))
 
   useEffect(() => { setQuality(detectQuality()) }, [setQuality])
 
@@ -20,10 +20,11 @@ export function BlackHoleCanvas() {
   }, [])
 
   const scale = QUALITY[quality].resolutionScale
+  const dpr = scale * (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1)
   return (
     <div className="fixed inset-0 z-0">
       <Canvas
-        dpr={[scale, scale]}
+        dpr={dpr}
         frameloop={active ? 'always' : 'never'}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
         camera={{ position: [0, 2.5, 16], fov: 55 }}

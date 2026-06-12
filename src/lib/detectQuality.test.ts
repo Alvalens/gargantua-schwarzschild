@@ -9,4 +9,7 @@ describe('pickQuality', () => {
   it('returns high for fine pointer with many cores', () => {
     expect(pickQuality({ coarsePointer: false, cores: 8 })).toBe('high')
   })
+  it('returns high at the 4-core boundary with a fine pointer', () => {
+    expect(pickQuality({ coarsePointer: false, cores: 4 })).toBe('high')
+  })
 })
