@@ -67,7 +67,14 @@ vec3 sampleDisk(vec3 p, vec3 dir) {
   // Soft edges.
   float edge = smoothstep(0.0, 0.08, t) * smoothstep(1.0, 0.92, t);
 
-  return base * shift * intensity * edge;
+  // Hue shift applied after intensity: pull approaching side toward saturated
+  // blue and receding side toward deep orange-red so the split survives the
+  // tone-map instead of washing out to cream.
+  vec3 doppTint = beta > 0.0 ? vec3(0.4, 0.65, 1.0) : vec3(1.0, 0.35, 0.1);
+  float tintAmt = clamp(abs(beta) * 2.6 * uDopplerStrength, 0.0, 0.75);
+  vec3 col = mix(base * shift, doppTint, tintAmt);
+
+  return col * intensity * edge;
 }
 
 void main() {
@@ -111,8 +118,14 @@ void main() {
   }
 
   if (!captured) color += starField(dir);
-  // Simple tone-map so additive highlights don't blow out.
-  color = color / (color + vec3(1.0));
+  // Luminance-based Reinhard: compresses brightness but preserves hue ratios,
+  // so the Doppler split doesn't desaturate toward white. l -> 0 keeps the
+  // scale factor ~1, so true blacks stay black.
+  float l = dot(color, vec3(0.2126, 0.7152, 0.0722));
+  color *= (l / (1.0 + l)) / max(l, 1e-4);
+  // Gentle saturation boost post tone-map.
+  vec3 gray = vec3(dot(color, vec3(0.2126, 0.7152, 0.0722)));
+  color = clamp(mix(gray, color, 1.35), 0.0, 1.0);
   color = pow(color, vec3(0.85));
   gl_FragColor = vec4(color, 1.0);
 }

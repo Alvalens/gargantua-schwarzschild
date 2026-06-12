@@ -11,8 +11,8 @@ export const PHYSICS = {
 export const ART = {
   diskBrightness: 1.1,
   dopplerStrength: 1.0,      // 0 = none, 1 = extreme blue/red asymmetry
-  colorTempInner: [0.75, 0.85, 1.0] as [number, number, number], // hot/blue
-  colorTempOuter: [1.0, 0.55, 0.18] as [number, number, number], // cool/orange
+  colorTempInner: [0.6, 0.78, 1.0] as [number, number, number], // hot/blue
+  colorTempOuter: [1.0, 0.45, 0.12] as [number, number, number], // cool/orange
   starDensity: 0.035,
   bloom: 0.6,
 } as const
