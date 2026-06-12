@@ -1,4 +1,5 @@
 import { Canvas } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
 import { BlackHole } from './BlackHole'
 
 export function BlackHoleCanvas() {
@@ -9,6 +10,7 @@ export function BlackHoleCanvas() {
         camera={{ position: [0, 2.5, 16], fov: 55 }}
       >
         <BlackHole />
+        <OrbitControls enablePan={false} minDistance={3} maxDistance={30} />
       </Canvas>
     </div>
   )
