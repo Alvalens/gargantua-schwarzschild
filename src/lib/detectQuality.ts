@@ -1,4 +1,5 @@
 import type { QualityTier } from './presets'
+import { isCoarsePointer } from './pointer'
 
 export interface DeviceSignals {
   coarsePointer: boolean
@@ -11,9 +12,6 @@ export function pickQuality(s: DeviceSignals): QualityTier {
 }
 
 export function detectQuality(): QualityTier {
-  const coarsePointer =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(pointer: coarse)')?.matches === true
   const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4
-  return pickQuality({ coarsePointer, cores })
+  return pickQuality({ coarsePointer: isCoarsePointer(), cores })
 }
