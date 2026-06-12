@@ -15,7 +15,7 @@ export function BlackHole() {
     if (!m) return
     const cam = camera as PerspectiveCamera
     m.uniforms.uTime.value += delta
-    m.uniforms.uResolution.value = [size.width, size.height]
+    const res = m.uniforms.uResolution.value as [number, number]; res[0] = size.width; res[1] = size.height
     m.uniforms.uCamPos.value.copy(cam.position)
     m.uniforms.uCamToWorld.value.copy(cam.matrixWorld)
     m.uniforms.uTanFov.value = Math.tan((cam.fov * Math.PI) / 180 / 2)
