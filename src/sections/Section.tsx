@@ -65,6 +65,16 @@ export function Section({ copy, index, total }: SectionProps) {
               : 'max-w-lg ml-auto text-right'
         }`}
       >
+        {/* Local scrim: soft radial darkening so copy stays legible over the
+            bloomed disk. Reads as cinematic falloff, not a card. */}
+        <div
+          aria-hidden
+          className="absolute -inset-x-20 -inset-y-14 -z-10"
+          style={{
+            background:
+              'radial-gradient(closest-side, rgba(0,0,0,0.62), rgba(0,0,0,0.28) 55%, transparent 100%)',
+          }}
+        />
         <motion.p
           initial={{ opacity: 0, letterSpacing: '0.6em' }}
           whileInView={{ opacity: 1, letterSpacing: '0.35em' }}
@@ -104,7 +114,7 @@ export function Section({ copy, index, total }: SectionProps) {
           className={`text-[17px] leading-relaxed max-w-[34ch] ${
             isHero ? 'mx-auto' : isEven ? '' : 'ml-auto'
           }`}
-          style={{ color: 'var(--dim)' }}
+          style={{ color: 'var(--dim)', textShadow: '0 1px 16px rgba(0,0,0,0.85)' }}
         >
           {copy.body}
         </motion.p>
