@@ -74,7 +74,7 @@ float fbm(vec3 p) {
 // Radial frequency >> azimuthal frequency => streaks elongated along the orbit.
 float diskNoise(float r, float theta, float dt, float seed) {
   float a = theta - 0.7 * pow(r, -1.5) * dt; // differential Keplerian rotation
-  vec3 p = vec3(cos(a) * 2.2, sin(a) * 2.2, r * 5.5) + seed;
+  vec3 p = vec3(cos(a) * 2.8, sin(a) * 2.8, r * 4.5) + seed;
   return fbm(p);
 }
 
@@ -98,17 +98,18 @@ vec3 sampleDisk(vec3 p, vec3 dir) {
   float theta = atan(p.z, p.x);
 
   // Turbulent filaments: fine streaks sheared by differential rotation, plus a
-  // slower large-scale brightness patch layer. pow() sharpens bright strands.
-  float fine = flowNoise(r, theta, 0.0);
+  // slower large-scale brightness patch layer. The coarse layer also warps the
+  // fine layer's radius so strands wobble instead of tracing perfect circles.
   float coarse = vnoise(vec3(cos(theta) * 0.9, sin(theta) * 0.9,
                              r * 1.3 - 0.12 * uTime) + 31.0);
-  float filaments = mix(0.4, 1.55, pow(fine, 1.6));
-  filaments *= mix(0.8, 1.25, coarse);
+  float fine = flowNoise(r + (coarse - 0.5) * 0.55, theta, 0.0);
+  float filaments = mix(0.32, 1.7, pow(fine, 1.75));
+  filaments *= mix(0.75, 1.3, coarse);
 
   // Temperature ramp: hot/blue inside -> cool/orange outside.
   vec3 base = mix(uColorInner, uColorOuter, t);
   // Inner-edge heat: pull toward white-hot before the Doppler tint at small t.
-  base = mix(vec3(1.0, 0.97, 0.92), base, smoothstep(0.0, 0.32, t));
+  base = mix(vec3(1.0, 0.97, 0.92), base, smoothstep(0.0, 0.22, t));
 
   // Keplerian orbital velocity direction (tangent), magnitude ~ 1/sqrt(r).
   vec3 radial = normalize(vec3(p.x, 0.0, p.z));
@@ -124,7 +125,7 @@ vec3 sampleDisk(vec3 p, vec3 dir) {
 
   // Radial falloff so the inner edge glows hottest, plus a searing photon-ring
   // intensity bump hugging the inner radius.
-  float heat = 1.0 + 2.2 * exp(-(r - uDiskInner) * 2.8);
+  float heat = 1.0 + 1.7 * exp(-(r - uDiskInner) * 3.6);
   float intensity = uDiskBrightness * doppler * (1.2 - 0.6 * t) * heat * filaments;
   // Soft edges.
   float edge = smoothstep(0.0, 0.08, t) * smoothstep(1.0, 0.92, t);
@@ -180,7 +181,7 @@ void main() {
     if (abs(newPos.y) < 1.2) {
       float ra = length(newPos.xz);
       if (ra > uDiskInner - 0.3 && ra < uDiskOuter) {
-        float hy = newPos.y * 3.1;                   // h ~ 0.32
+        float hy = newPos.y * 3.6;                   // h ~ 0.28
         float g = exp(-hy * hy);
         float ta = clamp((ra - uDiskInner) / (uDiskOuter - uDiskInner), 0.0, 1.0);
         vec3 gcol = mix(uColorInner, uColorOuter, ta);
@@ -192,7 +193,7 @@ void main() {
         float band = smoothstep(uDiskInner - 0.3, uDiskInner + 0.2, ra) *
                      smoothstep(uDiskOuter, uDiskOuter - 1.5, ra);
         float hot = 1.0 + 1.8 * exp(-(ra - uDiskInner) * 1.4);
-        color += gcol * g * band * hot * 0.045 * uStepSize * uDiskBrightness;
+        color += gcol * g * band * hot * 0.034 * uStepSize * uDiskBrightness;
       }
     }
 

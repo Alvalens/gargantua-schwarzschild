@@ -14,7 +14,7 @@ export const ART = {
   colorTempInner: [0.6, 0.78, 1.0] as [number, number, number], // hot/blue
   colorTempOuter: [1.0, 0.45, 0.12] as [number, number, number], // cool/orange
   starDensity: 0.035,
-  bloom: 0.6,
+  bloom: 0.6,                // WIRED: Bloom intensity knob in BlackHoleCanvas (postprocessing)
 } as const
 
 // Quality tiers — chosen at runtime by device capability.
